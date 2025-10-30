@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calaverita de Bere y Alexis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 50px;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: fadeInDown 1s ease;
+        }
+
+        .stanza {
+            font-size: 1.4em;
+            line-height: 1.8;
+            margin-bottom: 40px;
+            opacity: 0;
+            transform: translateY(30px);
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .stanza.active {
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        .stanza.speaking {
+            background: rgba(255, 107, 107, 0.2);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+            transform: translateY(0) scale(1.02);
+        }
+
+        /* Animaciones de personajes */
+        .character {
+            position: absolute;
+            font-size: 4em;
+            transition: all 0.5s ease;
+        }
+
+        .bere {
+            left: 10%;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0;
+        }
+
+        .alexis {
+            right: 10%;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0;
+        }
+
+        .death {
+            left: 50%;
+            top: 20%;
+            transform: translateX(-50%);
+            opacity: 0;
+            font-size: 5em;
+        }
+
+        .moon {
+            position: fixed;
+            top: 50px;
+            right: 50px;
+            font-size: 3em;
+            opacity: 0;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .heart {
+            position: fixed;
+            font-size: 2em;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Efectos de ciudad */
+        .buildings {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            opacity: 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            z-index: -1;
+        }
+
+        .building {
+            width: 80px;
+            background: linear-gradient(to top, #2c3e50, #34495e);
+            border-radius: 5px 5px 0 0;
+            position: relative;
+            animation: buildingGrow 1s ease forwards;
+        }
+
+        .building:nth-child(1) { height: 120px; }
+        .building:nth-child(2) { height: 150px; }
+        .building:nth-child(3) { height: 100px; }
+        .building:nth-child(4) { height: 180px; }
+        .building:nth-child(5) { height: 130px; }
+
+        .window {
+            width: 10px;
+            height: 10px;
+            background: #f39c12;
+            margin: 8px;
+            display: inline-block;
+            animation: windowBlink 2s infinite;
+        }
+
+        /* Camino */
+        .road {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: repeating-linear-gradient(
+                90deg,
+                #7f8c8d 0px,
+                #7f8c8d 40px,
+                #ecf0f1 40px,
+                #ecf0f1 80px
+            );
+            opacity: 0;
+        }
+
+        /* Botón de inicio */
+        .start-btn {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            padding: 20px 40px;
+            background: #ff6b6b;
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .start-btn:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+        }
+
+        /* Controles de audio */
+        .audio-controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+
+        .audio-controls.visible {
+            display: block;
+        }
+
+        .audio-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+        }
+
+        .audio-icon {
+            animation: pulse 1s infinite;
+        }
+
+        .error-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 107, 107, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            color: white;
+            text-align: center;
+            z-index: 2000;
+            display: none;
+            max-width: 500px;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .error-message h2 {
+            margin-bottom: 15px;
+        }
+
+        .error-message p {
+            line-height: 1.6;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Animaciones */
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes buildingGrow {
+            from {
+                transform: scaleY(0);
+            }
+            to {
+                transform: scaleY(1);
+            }
+        }
+
+        @keyframes windowBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @keyframes heartFloat {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-200px) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .fade-in {
+            animation: fadeInUp 1s ease forwards;
+        }
+    </style>
+</head>
+<body>
+    <button class="start-btn" id="startBtn">🎭 Comenzar Historia</button>
+    
+    <div class="error-message" id="errorMessage">
+        <h2>⚠️ Error al cargar audios</h2>
+        <p>No se pudieron cargar los archivos de audio. Por favor, asegúrate de que los archivos <strong>narracion.mp3</strong> y <strong>ambiente.mp3</strong> estén en la misma carpeta que este archivo HTML.</p>
+    </div>
+
+    <div class="audio-controls" id="audioControls">
+        <div class="audio-info">
+            <span class="audio-icon">🎙️</span>
+            <span id="audioStatus">Reproduciendo...</span>
+        </div>
+    </div>
+
+    <div class="moon">🌙</div>
+    <div class="buildings" id="buildings">
+        <div class="building">
+            <div class="window"></div><div class="window"></div><div class="window"></div>
+            <div class="window"></div><div class="window"></div><div class="window"></div>
+        </div>
+        <div class="building">
+            <div class="window"></div><div class="window"></div><div class="window"></div>
+            <div class="window"></div><div class="window"></div><div class="window"></div>
+        </div>
+        <div class="building">
+            <div class="window"></div><div class="window"></div><div class="window"></div>
+        </div>
+        <div class="building">
+            <div class="window"></div><div class="window"></div><div class="window"></div>
+            <div class="window"></div><div class="window"></div><div class="window"></div>
+        </div>
+        <div class="building">
+            <div class="window"></div><div class="window"></div><div class="window"></div>
+            <div class="window"></div><div class="window"></div><div class="window"></div>
+        </div>
+    </div>
+    <div class="road" id="road"></div>
+
+    <!-- Audio elements -->
+    <audio id="narracionAudio" preload="auto">
+        <source src="narracion.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="ambienteAudio" loop preload="auto">
+        <source src="ambiente.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="container">
+        <h1 class="hidden" id="title">💀 Calaverita de Bere y Alexis 💀</h1>
+        
+        <div class="character bere" id="bere">👩‍💼</div>
+        <div class="character alexis" id="alexis">🧳</div>
+        <div class="character death" id="death">💀</div>
+        
+        <div class="stanza" data-scene="1" data-start="0" data-end="12">
+            En la ciudad grande vive Bere afanada,<br>
+            trabajando sin pausa, siempre ocupada.<br>
+            Mientras Alexis, con alma viajera,<br>
+            la espera impaciente, semana tras semana entera.
+        </div>
+
+        <div class="stanza" data-scene="2" data-start="12" data-end="24">
+            La Muerte curiosa los quiso probar,<br>
+            pensó: "estos amantes los voy a separar",<br>
+            pero al ver su amor tan fuerte y sincero,<br>
+            dijo: "ni yo puedo con algo tan verdadero".
+        </div>
+
+        <div class="stanza" data-scene="3" data-start="24" data-end="38">
+            Bere entre calles, papeles y ruido,<br>
+            pensaba en Alexis, su amor querido,<br>
+            y él desde lejos, mirando la luna,<br>
+            soñaba con verla, contar las horas una a una. 🌙
+        </div>
+
+        <div class="stanza" data-scene="4" data-start="38" data-end="49">
+            Cuando al fin llega el ansiado día,<br>
+            la flaca se asoma con picardía,<br>
+            "¡Ay, Alexis, no corras, Bere espera!",<br>
+            "lo siento, huesuda, mi amor me acelera."
+        </div>
+
+        <div class="stanza" data-scene="5" data-start="49" data-end="63">
+            Y así cada viernes renace el amor,<br>
+            que ni la Muerte borra su fervor,<br>
+            pues Bere y Alexis, en su destino,<br>
+            vencen al tiempo… y al camino. ❤️
+        </div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const title = document.getElementById('title');
+        const stanzas = document.querySelectorAll('.stanza');
+        const bere = document.getElementById('bere');
+        const alexis = document.getElementById('alexis');
+        const death = document.getElementById('death');
+        const moon = document.querySelector('.moon');
+        const buildings = document.getElementById('buildings');
+        const road = document.getElementById('road');
+        const audioControls = document.getElementById('audioControls');
+        const audioStatus = document.getElementById('audioStatus');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        const narracionAudio = document.getElementById('narracionAudio');
+        const ambienteAudio = document.getElementById('ambienteAudio');
+        
+        // Configurar volumen del audio ambiental (más bajo que la narración)
+        ambienteAudio.volume = 0.3;
+        narracionAudio.volume = 1.0;
+
+        let currentStanzaIndex = 0;
+        let isPlaying = false;
+
+        startBtn.addEventListener('click', async () => {
+            try {
+                // Intentar reproducir los audios
+                await ambienteAudio.play();
+                await narracionAudio.play();
+                
+                startBtn.classList.add('hidden');
+                title.classList.remove('hidden');
+                audioControls.classList.add('visible');
+                isPlaying = true;
+                
+                startStorySync();
+            } catch (error) {
+                console.error('Error al reproducir audio:', error);
+                errorMessage.classList.add('show');
+                setTimeout(() => {
+                    errorMessage.classList.remove('show');
+                }, 5000);
+            }
+        });
+
+        function startStorySync() {
+            // Monitorear el tiempo del audio de narración
+            narracionAudio.addEventListener('timeupdate', updateStanzaDisplay);
+            
+            narracionAudio.addEventListener('ended', () => {
+                audioStatus.textContent = '✨ Historia completada';
+                setTimeout(() => {
+                    audioControls.classList.remove('visible');
+                    // Fade out del audio ambiental
+                    fadeOutAudio(ambienteAudio, 2000);
+                }, 2000);
+            });
+        }
+
+        function updateStanzaDisplay() {
+            const currentTime = narracionAudio.currentTime;
+            
+            stanzas.forEach((stanza, index) => {
+                const startTime = parseFloat(stanza.dataset.start);
+                const endTime = parseFloat(stanza.dataset.end);
+                
+                if (currentTime >= startTime && currentTime < endTime) {
+                    // Esta estrofa debe estar activa
+                    if (!stanza.classList.contains('active')) {
+                        stanza.classList.add('active');
+                        const scene = parseInt(stanza.dataset.scene);
+                        triggerSceneAnimations(scene);
+                    }
+                    
+                    // Marcar como hablando
+                    if (!stanza.classList.contains('speaking')) {
+                        // Remover speaking de todas las demás
+                        stanzas.forEach(s => s.classList.remove('speaking'));
+                        stanza.classList.add('speaking');
+                    }
+                } else if (currentTime >= endTime) {
+                    // Ya pasó esta estrofa
+                    stanza.classList.remove('speaking');
+                }
+            });
+        }
+
+        function triggerSceneAnimations(scene) {
+            switch(scene) {
+                case 1:
+                    // Mostrar ciudad y personajes
+                    buildings.style.opacity = '1';
+                    road.style.opacity = '1';
+                    bere.style.opacity = '1';
+                    bere.style.animation = 'fadeInUp 1s ease forwards';
+                    setTimeout(() => {
+                        alexis.style.opacity = '1';
+                        alexis.style.animation = 'fadeInUp 1s ease forwards';
+                    }, 1000);
+                    break;
+                    
+                case 2:
+                    // Aparece la muerte
+                    death.style.opacity = '1';
+                    death.style.animation = 'fadeInDown 1s ease forwards';
+                    setTimeout(() => {
+                        death.style.transform = 'translateX(-50%) scale(1.2)';
+                    }, 1000);
+                    setTimeout(() => {
+                        death.style.transform = 'translateX(-50%) scale(1)';
+                    }, 2000);
+                    break;
+                    
+                case 3:
+                    // Mostrar luna
+                    moon.style.opacity = '1';
+                    // Hacer que Bere y Alexis se muevan pensando
+                    bere.style.transform = 'translateY(-50%) rotate(-5deg)';
+                    alexis.style.transform = 'translateY(-50%) rotate(5deg)';
+                    createHearts();
+                    break;
+                    
+                case 4:
+                    // La muerte intenta separarlos
+                    death.style.left = '50%';
+                    death.style.top = '50%';
+                    setTimeout(() => {
+                        death.style.opacity = '0.5';
+                    }, 1500);
+                    break;
+                    
+                case 5:
+                    // Final: Acercar a los personajes
+                    bere.style.left = '45%';
+                    alexis.style.right = '45%';
+                    death.style.opacity = '0';
+                    createManyHearts();
+                    break;
+            }
+        }
+
+        function createHearts() {
+            for(let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart';
+                    heart.textContent = '❤️';
+                    heart.style.left = Math.random() * 100 + '%';
+                    heart.style.top = '80%';
+                    heart.style.opacity = '1';
+                    heart.style.animation = 'heartFloat 3s ease forwards';
+                    document.body.appendChild(heart);
+                    
+                    setTimeout(() => heart.remove(), 3000);
+                }, i * 500);
+            }
+        }
+
+        function createManyHearts() {
+            for(let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart';
+                    heart.textContent = '❤️';
+                    heart.style.left = (Math.random() * 80 + 10) + '%';
+                    heart.style.top = '70%';
+                    heart.style.opacity = '1';
+                    heart.style.animation = 'heartFloat 4s ease forwards';
+                    document.body.appendChild(heart);
+                    
+                    setTimeout(() => heart.remove(), 4000);
+                }, i * 300);
+            }
+        }
+
+        function fadeOutAudio(audio, duration) {
+            const startVolume = audio.volume;
+            const fadeInterval = 50;
+            const steps = duration / fadeInterval;
+            const volumeStep = startVolume / steps;
+            
+            const fade = setInterval(() => {
+                if (audio.volume > volumeStep) {
+                    audio.volume -= volumeStep;
+                } else {
+                    audio.volume = 0;
+                    audio.pause();
+                    clearInterval(fade);
+                }
+            }, fadeInterval);
+        }
+    </script>
+</body>
+</html>
